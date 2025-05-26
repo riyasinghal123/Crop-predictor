@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crop Yield Prediction</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div class="container py-5">
+      <h1 class="text-center main-title">
+        🌾 Crop Yield Prediction Per Country 🌾
+      </h1>
+
+      <div class="feature-card text-white">
+        <h2 class="text-center mb-4" style="color: white">
+          📊 Input All Features Here
+        </h2>
+
+        <form id="predictionForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="Year" class="form-label">📅 Year</label>
+              <input
+                type="number"
+                class="form-control form-control-dark"
+                id="Year"
+                name="Year"
+                value="2013"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="average_rain_fall_mm_per_year" class="form-label">
+                🌧️ Average Rainfall (mm/year)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control form-control-dark"
+                id="average_rain_fall_mm_per_year"
+                name="average_rain_fall_mm_per_year"
+                placeholder="e.g., 1200.5"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="pesticides_tonnes" class="form-label">
+                🧪 Pesticides (tonnes)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control form-control-dark"
+                id="pesticides_tonnes"
+                name="pesticides_tonnes"
+                placeholder="e.g., 150.25"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="avg_temp" class="form-label">
+                🌡️ Average Temperature (°C)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control form-control-dark"
+                id="avg_temp"
+                name="avg_temp"
+                placeholder="e.g., 25.5"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="Area" class="form-label">🌍 Area/Country</label>
+              <input
+                type="text"
+                class="form-control form-control-dark"
+                id="Area"
+                name="Area"
+                placeholder="e.g., India, USA, Brazil"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="Item" class="form-label">🌱 Crop Item</label>
+              <input
+                type="text"
+                class="form-control form-control-dark"
+                id="Item"
+                name="Item"
+                placeholder="e.g., Wheat, Rice, Maize"
+                required
+              />
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-predict btn-lg mt-3 w-100">
+                🔮 Predict Yield
+              </button>
+              <button
+                type="button"
+                id="testModels"
+                class="btn btn-secondary btn-sm mt-2 w-100"
+              >
+                🧪 Test Models (Debug)
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Prediction Result Area -->
+        <div
+          id="predictionResult"
+          class="prediction-result"
+          style="display: none"
+        >
+          <h2 style="color: white; margin-bottom: 10px">🎯 Predicted Yield:</h2>
+          <div id="predictionValue" class="prediction-value">Loading...</div>
+          <p style="color: #e0e0e0; font-size: 1.1rem">Tonnes per Hectare</p>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div
+          id="loadingIndicator"
+          class="text-center mt-4"
+          style="display: none"
+        >
+          <div class="spinner-border text-info" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="text-white mt-2">Calculating prediction...</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      document
+        .getElementById("predictionForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          // Show loading indicator
+          document.getElementById("loadingIndicator").style.display = "block";
+          document.getElementById("predictionResult").style.display = "none";
+
+          // Collect form data
+          const formData = new FormData(this);
+
+          try {
+            // Send POST request to Flask backend
+            const response = await fetch("/predict", {
+              method: "POST",
+              body: formData,
+            });
+
+            const result = await response.json();
+
+            // Hide loading indicator
+            document.getElementById("loadingIndicator").style.display = "none";
+
+            if (result.success) {
+              // Show successful prediction
+              document.getElementById("predictionValue").textContent =
+                parseFloat(result.prediction).toFixed(2);
+              document.getElementById("predictionResult").style.display =
+                "block";
+
+              // Smooth scroll to result
+              document.getElementById("predictionResult").scrollIntoView({
+                behavior: "smooth",
+              });
+            } else {
+              // Show error from server
+              alert(
+                `Prediction Error: ${result.error}\n\nPlease check your input values and try again.`
+              );
+              console.error("Server Error:", result.error);
+            }
+          } catch (error) {
+            // Hide loading and show network error
+            document.getElementById("loadingIndicator").style.display = "none";
+            alert(
+              "Network Error: Unable to connect to the prediction service. Please try again."
+            );
+            console.error("Network Error:", error);
+          }
+        });
+
+      // Add some interactive effects
+      document.querySelectorAll(".form-control-dark").forEach((input) => {
+        input.addEventListener("focus", function () {
+          this.style.borderColor = "#00d4ff";
+          this.style.boxShadow = "0 0 10px rgba(0, 212, 255, 0.3)";
+        });
+
+        input.addEventListener("blur", function () {
+          this.style.borderColor = "#666";
+          this.style.boxShadow = "none";
+        });
+      });
+
+      // Test models button
+      document
+        .getElementById("testModels")
+        .addEventListener("click", async function () {
+          this.disabled = true;
+          this.textContent = "Testing...";
+
+          try {
+            const response = await fetch("/test_models");
+            const result = await response.json();
+
+            if (result.success) {
+              alert(
+                `✅ Models Test Successful!\nTest Prediction: ${result.test_prediction}\n${result.message}`
+              );
+            } else {
+              alert(`❌ Models Test Failed!\nError: ${result.error}`);
+            }
+          } catch (error) {
+            alert(`❌ Network Error!\nCould not test models: ${error.message}`);
+          }
+
+          this.disabled = false;
+          this.textContent = "🧪 Test Models (Debug)";
+        });
+    </script>
+  </body>
+</html>
